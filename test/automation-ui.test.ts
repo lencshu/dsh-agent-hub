@@ -31,10 +31,10 @@ function nodes(tree: any): Element[] {
   if (!tree || typeof tree !== 'object' || !tree.props) return []
   return [tree, ...nodes(tree.props.children)]
 }
-function view(options: { manual?: { status: string; summary?: string }; run?: Record<string, unknown>; history?: Record<string, unknown>[]; enabled?: boolean; uncertain?: boolean; fresh?: boolean; empty?: boolean; definition?: ScriptTask } = {}) {
+function view(options: { manual?: { status: string; summary?: string }; run?: Record<string, unknown>; history?: Record<string, unknown>[]; enabled?: boolean; uncertain?: boolean; fresh?: boolean; empty?: boolean; available?: boolean; definition?: ScriptTask } = {}) {
   if (options.fresh !== false) reset(); else rerender()
   const calls: any[] = [], opened: any[] = []
-  const reply = { definitions: options.empty ? [] : [options.definition ?? definition], tasks: options.empty ? [] : [{ id: definition.id, title: definition.title, enabled: options.enabled ?? false, sessionId: 'session', taskId: 'task', time: '09:00', timeZone: 'Asia/Shanghai', ...(options.manual ? { manual: options.manual } : {}), ...(options.run ? { run: options.run } : {}), ...(options.history ? { history: options.history } : {}) }] }
+  const reply = { presetAvailable: options.available ?? false, definitions: options.empty ? [] : [options.definition ?? definition], tasks: options.empty ? [] : [{ id: definition.id, title: definition.title, enabled: options.enabled ?? false, sessionId: 'session', taskId: 'task', time: '09:00', timeZone: 'Asia/Shanghai', ...(options.manual ? { manual: options.manual } : {}), ...(options.run ? { run: options.run } : {}), ...(options.history ? { history: options.history } : {}) }] }
   const tree = AutomationPanel({ disabled: false, models: {}, store: {
     getSnapshot: () => ({ reply, uncertain: options.uncertain }), subscribe: () => () => {},
     request: async (action: string, payload: unknown) => { calls.push({ action, payload }); return { ...reply, preset: definition } },
@@ -68,9 +68,13 @@ test('automation validator aligns with host identifier, text, argument and timeo
   assert.equal(validDefinition({ ...definition, provider: 'bots' }), true)
 })
 test('automation empty view has no implicit execution and preset only fills a draft', async () => {
-  const initial = view({ empty: true })
+  // The Qoder CN template shows only where it can work, and only while its task does not exist yet.
+  assert.equal(view({ empty: true }).nodes.some((node) => node.props?.children === '用此模板'), false)
+  assert.equal(view({ available: true }).nodes.some((node) => node.props?.children === '用此模板'), true)
+  assert.equal(view({ available: true, definition: { ...definition, id: 'qoder-cn-daily-credit' } }).nodes.some((node) => node.props?.children === '用此模板'), false)
+  const initial = view({ empty: true, available: true })
   assert.deepEqual(initial.calls, [])
-  await button(initial.nodes, '填入 Qoder 中国版检查预设').props.onClick()
+  await button(initial.nodes, '用此模板').props.onClick()
   assert.deepEqual(initial.calls, [{ action: 'preset', payload: undefined }])
   const draft = view({ empty: true, fresh: false })
   assert.ok(draft.nodes.some((node) => node.type === 'form'))

@@ -161,7 +161,7 @@ import { resolveAutomationRoute } from './automation/route.ts'
 import { runScriptTask } from './automation/runner.ts'
 import { createRunLog } from './automation/log.ts'
 import { automationManagement, isLocalRequest, requireAutomationLocal, saveAutomationDefinitions } from './automation-management.ts'
-import { automationNode } from './automation-preset.ts'
+import { automationNode, qoderCnInstalled } from './automation-preset.ts'
 
 /** Routes that answer conversation turns only (an external agent runs each turn): never a helper, commit-message or default route. */
 const TURNS_ONLY: readonly string[] = [PROVIDER, CURSOR_PROVIDER, QODER_PROVIDER, HERMES_PROVIDER]
@@ -981,11 +981,12 @@ export function apply(ctx: HostContext, config: Config): void {
     preset: () => {
       const node = automationNode({ execPath: process.execPath, electron: process.versions.electron, path: process.env.PATH ?? process.env.Path ?? '', platform: process.platform })
       return {
-        id: 'qoder-cn-daily-credit', title: 'Qoder CN daily credit check',
+        id: 'qoder-cn-daily-credit', title: localized({ zh: 'Qoder 中国版每日积分检查', en: 'Qoder CN daily credit check' }),
         command: node, args: [fileURLToPath(new URL('./bin/qoder-daily-credit.mjs', import.meta.url))],
         cwd: dshHome(), provider: '', model: '', timeoutMs: 60_000,
       }
     },
+    presetAvailable: () => qoderCnInstalled({ platform: process.platform, appData: process.env.APPDATA }),
   })
   ctx.inject(['schedule', 'tools', 'sessionController', 'settings'], (scope) => scope.effect(() => {
     const offTool = automation.register(scope.tools as unknown as ReviewSyncTools)

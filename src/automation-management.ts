@@ -12,6 +12,8 @@ export interface AutomationManagementHost {
   save(definitions: ScriptTask[], expected: readonly ScriptTask[]): Promise<void>
   validateRoute(definition: ScriptTask): Promise<unknown>
   preset(): ScriptTask
+  /** Whether `preset` can work on this machine; the page offers it only then. */
+  presetAvailable(): boolean
 }
 
 const loopback = (hostname: string): boolean => {
@@ -57,8 +59,9 @@ export async function saveAutomationDefinitions(settings: SettingsService | unde
 /** Mutations are explicit, revision-fenced against the definition the editor actually saw. */
 export function automationManagement(host: AutomationManagementHost): (payload: Record<string, unknown>) => Promise<AutomationReply> {
   return async (payload) => {
-    if (payload.action === 'preset') return { ...await host.service.handle({ action: 'list' }), preset: host.preset() }
-    if (payload.action !== 'upsert' && payload.action !== 'remove') return host.service.handle(payload)
+    const available = (reply: AutomationReply): AutomationReply => ({ ...reply, presetAvailable: host.presetAvailable() })
+    if (payload.action === 'preset') return { ...available(await host.service.handle({ action: 'list' })), preset: host.preset() }
+    if (payload.action !== 'upsert' && payload.action !== 'remove') return available(await host.service.handle(payload))
     const definition = payload.action === 'upsert' ? validateScriptTask(payload.definition) : undefined
     const id = definition?.id ?? payload.id
     if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,119}$/.test(id)) throw new Error('Invalid automation id')
@@ -76,6 +79,6 @@ export function automationManagement(host: AutomationManagementHost): (payload: 
         await host.save(definitions.filter((item) => item.id !== id), definitions)
       }
     })
-    return host.service.handle({ action: 'list' })
+    return available(await host.service.handle({ action: 'list' }))
   }
 }

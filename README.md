@@ -172,7 +172,7 @@ Under the hood, every section of `Config` is declared `.volatile()` ([src/config
 
 ## Module: Script tasks
 
-**Settings → Agent Hub → Script tasks**: binds trusted local scripts to DSH native scheduled tasks, where a dedicated session on a chosen model or compatible Bot calls the one restricted tool. Program, arguments and working directory are saved explicitly; by default no task is created and nothing runs. Time and time zone are edited in the native task manager. A Qoder **China check** preset is included; claiming is allowed only when a claim argument is added explicitly, and it never switches to the international edition. Runs use the current user's permissions; this is not a script sandbox.
+**Settings → Agent Hub → Script tasks**: binds trusted local scripts to DSH native scheduled tasks, where a dedicated session on a chosen model or compatible Bot calls the one restricted tool. Program, arguments and working directory are saved explicitly; by default no task is created and nothing runs. Time and time zone are edited in the native task manager. A A Qoder CN daily credits template is included: it appears only on Windows with the Qoder CN desktop app installed, only checks by default, allows claiming only when a claim argument is added explicitly, and never switches to the international edition. Runs use the current user's permissions; this is not a script sandbox.
 
 See [usage, result protocol and recovery boundaries](docs/script-tasks.md).
 

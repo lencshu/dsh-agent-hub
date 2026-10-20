@@ -1,6 +1,14 @@
 /** Find an actual Node binary without executing anything or assuming Electron is Node. */
-import { statSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
+
+/** The Qoder CN desktop app's profile folder under %APPDATA%, the only place the daily credit script reads (scripts/qoder-daily-credit.mjs). */
+const QODER_CN_PROFILE = 'com.qodercn.app.stable'
+
+/** Whether the Qoder CN template can work here: Windows, with the desktop app's profile present. Reads nothing inside it. */
+export function qoderCnInstalled(options: { platform: NodeJS.Platform; appData?: string }, exists: (path: string) => boolean = existsSync): boolean {
+  return options.platform === 'win32' && options.appData !== undefined && win32.isAbsolute(options.appData) && exists(win32.join(options.appData, QODER_CN_PROFILE))
+}
 
 export function automationNode(options: { execPath: string; electron?: string; path: string; platform: NodeJS.Platform }, isFile: (file: string) => boolean = (file) => { try { return statSync(file).isFile() } catch { return false } }): string {
   const paths = options.platform === 'win32' ? win32 : posix

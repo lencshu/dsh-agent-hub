@@ -40,4 +40,10 @@ export type TaskStatus = {
   /** Finished runs of both kinds, newest first and bounded. */
   history?: TaskRun[]
 }
-export type AutomationReply = { tasks: TaskStatus[]; definitions: ScriptTask[]; preset?: ScriptTask }
+export type AutomationReply = {
+  tasks: TaskStatus[]
+  definitions: ScriptTask[]
+  preset?: ScriptTask
+  /** The Qoder CN template can work on this machine (its desktop app's profile is here): offer it. */
+  presetAvailable?: boolean
+}

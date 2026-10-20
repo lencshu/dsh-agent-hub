@@ -6,6 +6,9 @@ import { RoutePicker } from './route.tsx'
 import type { ModelDirectory } from './models.ts'
 import { t, type ConfigKey } from './i18n.ts'
 
+/** The id the Qoder CN template's task is saved under (index.ts). */
+const QODER_TEMPLATE = 'qoder-cn-daily-credit'
+
 const unavailable: AutomationSnapshot = {}
 const noSubscribe = (): (() => void) => () => {}
 const blank = (): ScriptTask => ({ id: '', title: '', command: '', args: [], cwd: '', provider: '', model: '', timeoutMs: 300000 })
@@ -147,12 +150,18 @@ export function AutomationPanel(props: { store?: AutomationStore; models: ModelD
     <div className="ac-control ac-automation-body">
       <div className="ac-review-schedule-actions">
         <button type="button" className="ah-btn" disabled={blocked || draft !== undefined} onClick={() => edit(blank(), null)}>{t('automation.add')}</button>
-        <button type="button" className="ah-btn" disabled={blocked || draft !== undefined} onClick={async () => {
-          const reply = await store?.request('preset'); if (reply?.preset) edit(reply.preset, null)
-        }}>{t('automation.preset')}</button>
         <button type="button" className="ah-btn" disabled={!store || busy} onClick={() => void store?.request()}>{t('automation.refresh')}</button>
       </div>
-      <p className="ac-hint">{t('automation.presetHint')}</p>
+      {/* The Qoder CN template, only where it can work and while no task of it exists. */}
+      {snapshot.reply?.presetAvailable === true && draft === undefined && !definitions.some((task) => task.id === QODER_TEMPLATE) && (
+        <div className="ac-template">
+          <svg className="ac-template-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h8M8 17h5" /></svg>
+          <p className="ac-template-text"><strong>{t('automation.template')}</strong><span>{t('automation.templateNote')}</span></p>
+          <button type="button" className="ah-btn" disabled={blocked} onClick={async () => {
+            const reply = await store?.request('preset'); if (reply?.preset) edit(reply.preset, null)
+          }}>{t('automation.templateUse')}</button>
+        </div>
+      )}
       <p className="ac-hint" role="status">{busy ? t(snapshot.busy === 'list' ? 'automation.loading' : 'automation.busy') : !snapshot.reply ? t('automation.unknown') : saved ? t('automation.saved') : definitions.length === 0 ? t('automation.empty') : ''}</p>
       {snapshot.uncertain && <p className="ac-notice" role="alert">{t('automation.uncertain')}</p>}
       {snapshot.error && <p className="ac-review-error" role="alert">{snapshot.error}</p>}

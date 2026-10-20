@@ -5,7 +5,7 @@ import type { AutomationReply, ScriptTask } from '../src/automation/types.ts'
 import { createPhoneSettings } from '../src/remote/settings.ts'
 import { sharedPatch } from '../src/sync/portable.ts'
 import { upstreamHeaders } from '../src/remote/proxy.ts'
-import { automationNode } from '../src/automation-preset.ts'
+import { automationNode, qoderCnInstalled } from '../src/automation-preset.ts'
 
 const definition: ScriptTask = { id: 'sample', title: 'Sample', command: 'C:/runtime/node.exe', args: ['C:/tasks/check.mjs'], cwd: 'C:/tasks', provider: 'test', model: 'small', timeoutMs: 60000 }
 function fixture() {
@@ -23,6 +23,7 @@ function fixture() {
     async save(next) { saves++; definitions = structuredClone(next) },
     async validateRoute() { routes++ },
     preset: () => definition,
+    presetAvailable: () => false,
   })
   return { request, saves: () => saves, routes: () => routes, active: () => { active = true } }
 }
@@ -32,6 +33,15 @@ test('the CN preset selects a real Node binary, never the Electron desktop execu
   assert.equal(automationNode(options, (file) => file === 'C:\\node\\node.exe'), 'C:\\node\\node.exe')
   assert.throws(() => automationNode({ ...options, path: '.' }, () => true), /Node is unavailable/)
   assert.equal(automationNode({ execPath: '/usr/bin/node', platform: 'linux', path: '' }, () => true), '/usr/bin/node')
+})
+
+test('the CN template is offered only on Windows with the Qoder CN desktop profile', () => {
+  const profile = 'C:\\Users\\me\\AppData\\Roaming\\com.qodercn.app.stable'
+  const exists = (file: string): boolean => file === profile
+  assert.equal(qoderCnInstalled({ platform: 'win32', appData: 'C:\\Users\\me\\AppData\\Roaming' }, exists), true)
+  assert.equal(qoderCnInstalled({ platform: 'win32', appData: 'C:\\Users\\other\\AppData\\Roaming' }, exists), false)
+  assert.equal(qoderCnInstalled({ platform: 'win32' }, () => true), false)
+  assert.equal(qoderCnInstalled({ platform: 'darwin', appData: '/Users/me' }, () => true), false)
 })
 
 test('script management is loopback only, independent of phone settings', () => {
@@ -75,6 +85,7 @@ test('list and preset never save, authorize or execute a script', async () => {
   const f = fixture()
   assert.deepEqual((await f.request({ action: 'list' })).definitions, [])
   assert.equal((await f.request({ action: 'preset' })).preset?.id, definition.id)
+  assert.equal((await f.request({ action: 'list' })).presetAvailable, false)
   assert.equal(f.saves(), 0)
   assert.equal(f.routes(), 0)
 })
